@@ -123,13 +123,22 @@ namespace jrc
         for (auto& mmo : drops)
         {
             Optional<const Drop> drop = mmo.second.get();
-            if (drop && drop->bounds().contains(playerpos))
+            if (drop)
             {
-                lootenabled = false;
+                Point<int16_t> droppos = drop->get_position();
+                int dx = droppos.x() - playerpos.x();
+                int dy = droppos.y() - playerpos.y();
 
-                int32_t oid = mmo.first;
-                Point<int16_t> position = drop->get_position();
-                return{ oid, position };
+                const int PICKUP_RADIUS = 25;
+
+                if (dx * dx + dy * dy <= PICKUP_RADIUS * PICKUP_RADIUS)
+                {
+                    lootenabled = false;
+
+                    int32_t oid = mmo.first;
+                    Point<int16_t> position = droppos;
+                    return { oid, position };
+                }
             }
         }
         return{ 0, {} };
