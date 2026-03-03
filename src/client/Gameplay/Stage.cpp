@@ -191,6 +191,16 @@ namespace jrc
         {
             combat.use_move(0);
         }
+        if (pickup_held_)
+        {
+            pickup_tick_++;
+
+            if (pickup_tick_ >= PICKUP_INTERVAL)
+            {
+                pickup_tick_ = 0;
+                check_drops();
+            }
+        }
     }
 
     void Stage::show_character_effect(int32_t cid, CharEffect::Id effect)
@@ -317,6 +327,12 @@ namespace jrc
             bool repeated_hold = down && player.is_key_down(keyaction);
 
             handle_directional_context(keyaction, down);
+
+            if (keyaction == KeyAction::PICKUP && !down)
+            {
+                pickup_held_ = false;
+            }
+            
             if (down && !repeated_hold)
             {
                 switch (action)
@@ -328,7 +344,13 @@ namespace jrc
                     combat.use_move(0);
                     break;
                 case KeyAction::PICKUP:
-                    check_drops();
+                    pickup_held_ = down;
+
+                    if (down)
+                    {
+                        pickup_tick_ = 0;
+                        check_drops(); // immediate pickup
+                    }
                     break;
                 default:
                     break;

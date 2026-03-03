@@ -103,6 +103,9 @@ namespace jrc
         void handle_directional_context(KeyAction::Id action, bool down);
         void update_directional_context();
         void check_drops();
+        bool pickup_held_ = false;
+        uint32_t pickup_tick_ = 0;
+        static constexpr uint32_t PICKUP_INTERVAL = 6; 
 
         enum State
         {
