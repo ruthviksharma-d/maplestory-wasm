@@ -26,10 +26,18 @@
 
 #include "nlnx/nx.hpp"
 
+#include <chrono>
+
 namespace jrc
 {
+    namespace
+    {
+        constexpr uint32_t PICKUP_INTERVAL_MS = 100;
+    }
+
     Stage::Stage()
         : combat(player, chars, mobs)
+        , last_pickup_time(0)
     {
         state = INACTIVE;
         mapid = 0;
@@ -191,9 +199,19 @@ namespace jrc
         {
             combat.use_move(0);
         }
+
+        // Time-based pickup retry system
         if (player.is_key_down(KeyAction::PICKUP))
         {
-            check_drops();
+            uint64_t current_time =
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count();
+
+            if (current_time - last_pickup_time >= PICKUP_INTERVAL_MS)
+            {
+                last_pickup_time = current_time;
+                check_drops();
+            }
         }
     }
 
@@ -321,7 +339,6 @@ namespace jrc
             bool repeated_hold = down && player.is_key_down(keyaction);
 
             handle_directional_context(keyaction, down);
-            
             if (down && !repeated_hold)
             {
                 switch (action)
@@ -333,10 +350,8 @@ namespace jrc
                     combat.use_move(0);
                     break;
                 case KeyAction::PICKUP:
-                    if (down)
-                    {
-                        check_drops();
-                    }
+                    // Immediate pickup on key press
+                    check_drops();
                     break;
                 default:
                     break;

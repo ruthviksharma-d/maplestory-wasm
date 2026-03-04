@@ -103,7 +103,7 @@ namespace jrc
         void handle_directional_context(KeyAction::Id action, bool down);
         void update_directional_context();
         void check_drops();
-       
+        uint64_t last_pickup_time;
 
         enum State
         {
