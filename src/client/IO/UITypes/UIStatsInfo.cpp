@@ -57,7 +57,6 @@ namespace jrc
         buttons[BT_DETAILCLOSE] = std::make_unique<MapleButton>(src["BtDetailClose"]);
         buttons[BT_DETAILCLOSE]->set_active(false);
 
-        jobId = stats.get_stat(Maplestat::JOB);
         update_ap();
 
         for (size_t i = 0; i < NUMLABELS; ++i)
@@ -187,15 +186,7 @@ namespace jrc
         switch (stat)
         {
         case Maplestat::JOB:
-            jobId = stats.get_stat(Maplestat::JOB);
             statlabels[JOB].change_text(stats.get_jobname());
-
-            buttons[BT_HP]->set_active(jobId != Job::BEGINNER);
-            buttons[BT_MP]->set_active(jobId != Job::BEGINNER);
-            buttons[BT_STR]->set_active(jobId != Job::BEGINNER);
-            buttons[BT_DEX]->set_active(jobId != Job::BEGINNER);
-            buttons[BT_INT]->set_active(jobId != Job::BEGINNER);
-            buttons[BT_LUK]->set_active(jobId != Job::BEGINNER);
             break;
         case Maplestat::FAME:
             update_simple(FAME, Maplestat::FAME);
@@ -251,30 +242,22 @@ namespace jrc
 
     void UIStatsinfo::update_ap()
     {
-        Button::State newstate;
         bool nowap = stats.get_stat(Maplestat::AP) > 0;
-        if (nowap)
-        {
-            newstate = Button::NORMAL;
+        Button::State newstate = nowap ? Button::NORMAL : Button::DISABLED;
 
-            buttons[BT_HP ]->set_position(Point<int16_t>(20, -36));
-            buttons[BT_MP ]->set_position(Point<int16_t>(20, -18));
-            buttons[BT_STR]->set_position(Point<int16_t>(20,  51));
-            buttons[BT_DEX]->set_position(Point<int16_t>(20,  69));
-            buttons[BT_INT]->set_position(Point<int16_t>(20,  87));
-            buttons[BT_LUK]->set_position(Point<int16_t>(20, 105));
-        }
-        else
-        {
-            newstate = Button::DISABLED;
+        // Keep the AP controls on a single layout and let the button state
+        // swap the texture. MapleButton already normalizes per-state origins.
+        buttons[BT_HP ]->set_position(Point<int16_t>(20, -36));
+        buttons[BT_MP ]->set_position(Point<int16_t>(20, -18));
+        buttons[BT_STR]->set_position(Point<int16_t>(20,  51));
+        buttons[BT_DEX]->set_position(Point<int16_t>(20,  69));
+        buttons[BT_INT]->set_position(Point<int16_t>(20,  87));
+        buttons[BT_LUK]->set_position(Point<int16_t>(20, 105));
 
-            buttons[BT_HP ]->set_position(Point<int16_t>(-48, 14 ));
-            buttons[BT_MP ]->set_position(Point<int16_t>(-48, 32 ));
-            buttons[BT_STR]->set_position(Point<int16_t>(-48, 101));
-            buttons[BT_DEX]->set_position(Point<int16_t>(-48, 119));
-            buttons[BT_INT]->set_position(Point<int16_t>(-48, 137));
-            buttons[BT_LUK]->set_position(Point<int16_t>(-48, 155));
-        }
+        // Beginner AP assignment is controlled by the server: when starter AP
+        // is manual, Cosmic exposes spendable AP through the normal stat pool.
+        // Keep the buttons available and let the current AP value decide
+        // whether they are usable.
         buttons[BT_HP ]->set_state(newstate);
         buttons[BT_MP ]->set_state(newstate);
         buttons[BT_STR]->set_state(newstate);
