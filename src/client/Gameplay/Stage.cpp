@@ -191,15 +191,9 @@ namespace jrc
         {
             combat.use_move(0);
         }
-        if (pickup_held_)
+        if (player.is_key_down(KeyAction::PICKUP))
         {
-            pickup_tick_++;
-
-            if (pickup_tick_ >= PICKUP_INTERVAL)
-            {
-                pickup_tick_ = 0;
-                check_drops();
-            }
+            check_drops();
         }
     }
 
@@ -327,11 +321,6 @@ namespace jrc
             bool repeated_hold = down && player.is_key_down(keyaction);
 
             handle_directional_context(keyaction, down);
-
-            if (keyaction == KeyAction::PICKUP && !down)
-            {
-                pickup_held_ = false;
-            }
             
             if (down && !repeated_hold)
             {
@@ -344,12 +333,9 @@ namespace jrc
                     combat.use_move(0);
                     break;
                 case KeyAction::PICKUP:
-                    pickup_held_ = down;
-
                     if (down)
                     {
-                        pickup_tick_ = 0;
-                        check_drops(); // immediate pickup
+                        check_drops();
                     }
                     break;
                 default:
