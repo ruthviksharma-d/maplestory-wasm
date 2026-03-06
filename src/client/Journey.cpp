@@ -39,6 +39,33 @@ namespace jrc
 {
     Error init()
     {
+#ifdef MS_PLATFORM_WASM
+        auto loadConfigString = [](const char* key, auto& setting) {
+            char* val = (char*)EM_ASM_INT({
+                var k = UTF8ToString($0);
+                if (typeof Module !== 'undefined' && Module.LazyFS && Module.LazyFS[k] !== undefined && Module.LazyFS[k] !== null) {
+                    var str = Module.LazyFS[k].toString();
+                    var lengthBytes = lengthBytesUTF8(str) + 1;
+                    var stringOnWasmHeap = _malloc(lengthBytes);
+                    stringToUTF8(str, stringOnWasmHeap, lengthBytes);
+                    return stringOnWasmHeap;
+                }
+                return 0;
+            }, key);
+            
+            if (val) {
+                setting.save(std::string(val));
+                free(val);
+            }
+        };
+
+        loadConfigString("MapleStoryServerIp", Setting<MapleStoryServerIp>::get());
+        loadConfigString("MapleStoryServerPort", Setting<MapleStoryServerPort>::get());
+        loadConfigString("ProxyIP", Setting<ProxyIP>::get());
+        loadConfigString("ProxyPort", Setting<ProxyPort>::get());
+        loadConfigString("AssetsServerProtocol", Setting<AssetsServerProtocol>::get());
+#endif
+
         if (Error error = Session::get().init())
         {
             return error;
@@ -104,8 +131,13 @@ namespace jrc
     static int32_t samples = 0;
 
     // Maximum elapsed time to prevent spiral-of-death when returning from background.
-    // 250000 microseconds = 250ms, which is ~4 frames at 60fps
+    // 250000 microseconds = 250ms, which is ~15 frames at 60fps
     static constexpr int64_t MAX_FRAME_TIME = 250000;
+
+    // Maximum number of updates per frame to prevent freeze after long background periods.
+    // Even with capped frame time, a long background duration (e.g., 2+ minutes) can cause
+    // thousands of updates. This limit ensures the game remains responsive.
+    static constexpr int32_t MAX_UPDATES_PER_FRAME = 8;
 
     void main_tick()
     {
@@ -126,8 +158,13 @@ namespace jrc
 
         accumulator += elapsed;
 
-        for (; accumulator >= timestep; accumulator -= timestep)
+        // Limit the number of updates per frame to prevent freeze after long background periods
+        int32_t updates_count = 0;
+        for (; accumulator >= timestep && updates_count < MAX_UPDATES_PER_FRAME; accumulator -= timestep)
+        {
             update();
+            ++updates_count;
+        }
 
         float alpha = static_cast<float>(accumulator) / timestep;
         draw(alpha);
@@ -142,8 +179,6 @@ namespace jrc
             }
             else if (period)
             {
-                int64_t fps = (samples * 1000000) / period;
-                // std::cout << "FPS: " << fps << std::endl;
                 period = 0;
                 samples = 0;
             }

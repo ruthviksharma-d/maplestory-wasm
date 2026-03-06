@@ -126,6 +126,8 @@ namespace jrc
             case Cursor::IDLE:
                 focusedtextfield = {};
                 break;
+            default:
+                break;
             }
         }
     }
@@ -204,6 +206,7 @@ namespace jrc
                 UIElement::ITEMINVENTORY,
                 UIElement::EQUIPINVENTORY,
                 UIElement::SKILLBOOK,
+                UIElement::PARTY,
                 UIElement::STATSINFO,
                 UIElement::NOTICE
             };
@@ -223,7 +226,9 @@ namespace jrc
 
         if (focusedtextfield)
         {
-            bool ctrl = is_key_down[keyboard.ctrlcode()];
+            bool ctrl =
+                is_key_down[keyboard.ctrlcode()] ||
+                is_key_down[GLFW_KEY_RIGHT_CONTROL];
             if (ctrl)
             {
                 if (!pressed)
@@ -237,12 +242,16 @@ namespace jrc
                     case KeyAction::PASTE:
                         focusedtextfield->add_string(Window::get().getclipboard());
                         break;
+                    default:
+                        break;
                     }
                 }
             }
             else
             {
-                bool shift = is_key_down[keyboard.shiftcode()];
+                bool shift =
+                    is_key_down[keyboard.shiftcode()] ||
+                    is_key_down[GLFW_KEY_RIGHT_SHIFT];
                 Keyboard::Mapping mapping = keyboard.get_text_mapping(keycode, shift);
                 focusedtextfield->send_key(mapping.type, mapping.action, pressed);
             }
@@ -254,6 +263,12 @@ namespace jrc
             if (mapping.type)
             {
                 state->send_key(mapping.type, mapping.action, pressed, escape);
+            }
+            else if (pressed && keycode == GLFW_KEY_P)
+            {
+                // Some server keymaps leave Party unbound; keep the expected
+                // default hotkey behavior for opening the Party UI.
+                state->send_key(KeyType::MENU, KeyAction::PARTY, true, false);
             }
         }
 
@@ -278,6 +293,14 @@ namespace jrc
         }
 
         focusedtextfield = tofocus;
+    }
+
+    void UI::blur_textfield(Textfield* textfield)
+    {
+        if (focusedtextfield && focusedtextfield.get() == textfield)
+        {
+            focusedtextfield = {};
+        }
     }
 
     void UI::remove_textfield()
