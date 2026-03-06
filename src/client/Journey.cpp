@@ -103,6 +103,10 @@ namespace jrc
     static int64_t period = 0;
     static int32_t samples = 0;
 
+    // Maximum elapsed time to prevent spiral-of-death when returning from background.
+    // 250000 microseconds = 250ms, which is ~4 frames at 60fps
+    static constexpr int64_t MAX_FRAME_TIME = 250000;
+
     void main_tick()
     {
         if (!running())
@@ -114,7 +118,15 @@ namespace jrc
 
         int64_t elapsed = Timer::get().stop();
 
-        for (accumulator += elapsed; accumulator >= timestep; accumulator -= timestep)
+        // Cap elapsed time to prevent spiral-of-death when tab returns from background
+        if (elapsed > MAX_FRAME_TIME)
+        {
+            elapsed = MAX_FRAME_TIME;
+        }
+
+        accumulator += elapsed;
+
+        for (; accumulator >= timestep; accumulator -= timestep)
             update();
 
         float alpha = static_cast<float>(accumulator) / timestep;
