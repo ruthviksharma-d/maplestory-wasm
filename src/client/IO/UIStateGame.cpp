@@ -23,6 +23,7 @@
 #include "UITypes/UIBuffList.h"
 #include "UITypes/UINpcTalk.h"
 #include "UITypes/UIShop.h"
+#include "UITypes/UIStorage.h"
 #include "UITypes/UIStatsInfo.h"
 #include "UITypes/UIItemInventory.h"
 #include "UITypes/UIEquipInventory.h"
@@ -32,8 +33,8 @@
 #include "UITypes/UIKeyConfig.h"
 #include "UITypes/UIWorldMap.h"
 
-#include "../Console.h"
 #include "../Constants.h"
+#include "../Character/Inventory/InventoryType.h"
 #include "../Gameplay/Stage.h"
 
 #include <algorithm>
@@ -53,6 +54,8 @@ namespace jrc
             case UIElement::SKILLBOOK:
                 return Tooltip::SKILLBOOK;
             case UIElement::SHOP:
+                return Tooltip::SHOP;
+            case UIElement::STORAGE:
                 return Tooltip::SHOP;
             case UIElement::MINIMAP:
                 return Tooltip::MINIMAP;
@@ -82,6 +85,7 @@ namespace jrc
         emplace<UIBuffList>();
         emplace<UINpcTalk>();
         emplace<UIShop>(look, inventory);
+        emplace<UIStorage>(inventory);
     }
 
     void UIStateGame::draw(float inter, Point<int16_t> cursor) const
@@ -210,7 +214,6 @@ namespace jrc
                     );
                     break;
                 case KeyAction::KEYCONFIG:
-                    Console::get().print("[ui] dispatching KEYCONFIG window open");
                     emplace<UIKeyConfig>(
                         Stage::get().get_player().get_inventory(),
                         Stage::get().get_player().get_skills()
@@ -453,6 +456,18 @@ namespace jrc
 
     void UIStateGame::show_item(Tooltip::Parent parent, int32_t itemid)
     {
+        if (parent == Tooltip::SHOP && InventoryType::by_item_id(itemid) == InventoryType::EQUIP)
+        {
+            eqtooltip.set_item(parent, itemid);
+
+            if (itemid)
+            {
+                tooltip       = eqtooltip;
+                tooltipparent = parent;
+            }
+            return;
+        }
+
         ittooltip.set_item(itemid);
 
         if (itemid)

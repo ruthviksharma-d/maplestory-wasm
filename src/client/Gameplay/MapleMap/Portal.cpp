@@ -28,7 +28,7 @@ namespace jrc
                    int32_t          tid,
                    std::string      tnm)
         : animation(a), type(t), name(nm), position(p),
-          warpinfo(tid, intramap, tnm, nm)
+          warpinfo(tid, t, intramap, tnm, nm)
     {
         touched = false;
     }
@@ -43,7 +43,8 @@ namespace jrc
 
     void Portal::draw(Point<int16_t> viewpos, float inter) const
     {
-        if (!animation || (type == HIDDEN && !touched))
+        bool hidden_until_touched = (type == HIDDEN || type == SCRIPTED_HIDDEN) && !touched;
+        if (!animation || hidden_until_touched)
         {
             return;
         }

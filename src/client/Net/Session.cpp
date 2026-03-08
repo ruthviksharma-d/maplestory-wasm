@@ -16,18 +16,44 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.    //
 //////////////////////////////////////////////////////////////////////////////
 #include "Session.h"
-#include "OutPacket.h"
 
 #include "../Configuration.h"
 #include "../Console.h"
 #ifdef MS_PLATFORM_WASM
 #include "../Util/Misc.h"
 #endif
-#include <iomanip>
-#include <sstream>
 
 namespace jrc
 {
+    namespace
+    {
+        bool is_local_channel_address(const std::string& address)
+        {
+            return address == "127.0.0.1" || address == "0.0.0.0" || address == "localhost";
+        }
+
+        std::string resolve_channel_address(const char* address)
+        {
+            std::string target_address = (address != nullptr) ? address : "";
+            if (!is_local_channel_address(target_address))
+            {
+                return target_address;
+            }
+
+            std::string configured_server_ip = Setting<MapleStoryServerIp>::get().load();
+            if (configured_server_ip.empty())
+            {
+                return target_address;
+            }
+
+            Console::get().print(
+                "Intercepted local channel IP " + target_address +
+                ", substituting with " + configured_server_ip
+            );
+            return configured_server_ip;
+        }
+    }
+
     Session::Session()
     {
         connected = false;
@@ -94,7 +120,9 @@ namespace jrc
 
         if (success)
         {
-            init(address, port);
+            std::string target_address = resolve_channel_address(address);
+            const char* target_port = (port != nullptr) ? port : "";
+            init(target_address.c_str(), target_port);
         }
         else
         {
@@ -159,29 +187,6 @@ namespace jrc
         if (!connected)
         {
             return;
-        }
-
-        if (packet_length >= 2)
-        {
-            uint16_t opcode =
-                static_cast<uint16_t>(static_cast<uint8_t>(packet_bytes[0])) |
-                (static_cast<uint16_t>(static_cast<uint8_t>(packet_bytes[1])) << 8);
-
-            if (opcode == OutPacket::CREATE_CHAR)
-            {
-                std::ostringstream hex;
-                hex << std::uppercase << std::hex << std::setfill('0');
-                for (size_t i = 0; i < packet_length; ++i)
-                {
-                    hex << std::setw(2)
-                        << static_cast<unsigned int>(static_cast<uint8_t>(packet_bytes[i]));
-                }
-
-                Console::get().print(
-                    "[NET] CREATE_CHAR len=" + std::to_string(packet_length) +
-                    " payload=" + hex.str()
-                );
-            }
         }
 
         int8_t header[HEADER_LENGTH];

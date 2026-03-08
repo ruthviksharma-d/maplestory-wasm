@@ -92,6 +92,9 @@ namespace jrc
         SET_FIELD               = 125,
         MULTI_CHAT              = 134,
         FIELD_EFFECT            = 138,
+        FIELD_OBSTACLE_ONOFF   = 139,
+        FIELD_OBSTACLE_LIST    = 140,
+        FIELD_OBSTACLE_RESET   = 141,
         CLOCK                   = 147,
         LEGACY_FIELD_OBJECT     = 159,
 
@@ -142,6 +145,7 @@ namespace jrc
         // NPC Interaction
         NPC_DIALOGUE  = 304,
         OPEN_NPC_SHOP = 305,
+        STORAGE       = 309,
 
         KEYMAP      = 335,
         AUTO_HP_POT = 336,
@@ -219,6 +223,7 @@ namespace jrc
         // Npc Interaction Handlers
         emplace<NPC_DIALOGUE, NpcDialogueHandler>();
         emplace<OPEN_NPC_SHOP, OpenNpcShopHandler>();
+        emplace<STORAGE, StorageHandler>();
 
         // TODO
         emplace<MOVE_MOB_RESPONSE, NullHandler>();
@@ -231,6 +236,9 @@ namespace jrc
         emplace<SCRIPT_PROGRESS_MESSAGE, NullHandler>();
         emplace<RECEIVE_POLICE, NullHandler>();
         emplace<FIELD_EFFECT, FieldEffectHandler>();
+        emplace<FIELD_OBSTACLE_ONOFF, NullHandler>();
+        emplace<FIELD_OBSTACLE_LIST, NullHandler>();
+        emplace<FIELD_OBSTACLE_RESET, NullHandler>();
         emplace<LEGACY_FIELD_OBJECT, NullHandler>();
         emplace<LOCK_UI, NullHandler>();
         emplace<TOGGLE_UI, NullHandler>();
