@@ -124,6 +124,8 @@ namespace jrc
         State state;
         int32_t mapid;
 
+        uint32_t pickup_ticks_remaining;
+
         MapInfo mapinfo;
         MapTilesObjs tilesobjs;
         MapBackgrounds backgrounds;

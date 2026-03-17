@@ -130,15 +130,6 @@ namespace jrc
     static int64_t period = 0;
     static int32_t samples = 0;
 
-    // Maximum elapsed time to prevent spiral-of-death when returning from background.
-    // 250000 microseconds = 250ms, which is ~15 frames at 60fps
-    static constexpr int64_t MAX_FRAME_TIME = 250000;
-
-    // Maximum number of updates per frame to prevent freeze after long background periods.
-    // Even with capped frame time, a long background duration (e.g., 2+ minutes) can cause
-    // thousands of updates. This limit ensures the game remains responsive.
-    static constexpr int32_t MAX_UPDATES_PER_FRAME = 8;
-
     void main_tick()
     {
         if (!running())
@@ -149,22 +140,11 @@ namespace jrc
         }
 
         int64_t elapsed = Timer::get().stop();
+        constexpr int64_t MAX_ELAPSED = Constants::TIMESTEP * 4 * 1000;
+        elapsed = std::min(elapsed, MAX_ELAPSED);
 
-        // Cap elapsed time to prevent spiral-of-death when tab returns from background
-        if (elapsed > MAX_FRAME_TIME)
-        {
-            elapsed = MAX_FRAME_TIME;
-        }
-
-        accumulator += elapsed;
-
-        // Limit the number of updates per frame to prevent freeze after long background periods
-        int32_t updates_count = 0;
-        for (; accumulator >= timestep && updates_count < MAX_UPDATES_PER_FRAME; accumulator -= timestep)
-        {
+        for (accumulator += elapsed; accumulator >= timestep; accumulator -= timestep)
             update();
-            ++updates_count;
-        }
 
         float alpha = static_cast<float>(accumulator) / timestep;
         draw(alpha);
@@ -203,6 +183,8 @@ namespace jrc
         while (running())
         {
             int64_t elapsed = Timer::get().stop();
+            constexpr int64_t MAX_ELAPSED = Constants::TIMESTEP * 4 * 1000;
+            elapsed = std::min(elapsed, MAX_ELAPSED);
 
             // Update game with constant timestep as many times as possible.
             for (accumulator += elapsed; accumulator >= timestep; accumulator -= timestep)

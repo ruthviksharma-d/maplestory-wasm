@@ -28,14 +28,13 @@
 #include "nlnx/nx.hpp"
 
 #include <algorithm>
+
+#include <algorithm>
 #include <chrono>
 namespace jrc
 {
     Stage::Stage()
         : combat(player, chars, mobs)
-        , last_pickup_time(0)
-        , pending_intro_warp_mapid(-1)
-        , pending_intro_warp_delay_ms(0)
     {
         state = INACTIVE;
         mapid = 0;
@@ -206,6 +205,19 @@ namespace jrc
         if (player.is_key_down(KeyAction::ATTACK))
         {
             combat.use_move(0);
+        }
+
+        if (player.is_key_down(KeyAction::PICKUP))
+        {
+            if (pickup_ticks_remaining == 0)
+            {
+                check_drops();
+                pickup_ticks_remaining = 100 / Constants::TIMESTEP;
+            }
+            else
+            {
+                --pickup_ticks_remaining;
+            }
         }
     }
 
@@ -487,34 +499,5 @@ namespace jrc
     void Stage::add_effect(const std::string& path)
     {
         effect = MapEffect(path);
-        if (is_intro_input_locked())
-        {
-            player.set_direction(false);
-            release_intro_locked_actions();
-        }
-    }
-
-    void Stage::schedule_intro_warp(int32_t target_mapid, int32_t delay_ms)
-    {
-        pending_intro_warp_mapid = target_mapid;
-        pending_intro_warp_delay_ms = std::max<int32_t>(0, delay_ms);
-    }
-
-    void Stage::update_intro_warp()
-    {
-        if (pending_intro_warp_mapid < 0)
-        {
-            return;
-        }
-
-        pending_intro_warp_delay_ms -= Constants::TIMESTEP;
-        if (pending_intro_warp_delay_ms > 0)
-        {
-            return;
-        }
-
-        ChangeMapPacket(false, pending_intro_warp_mapid, "", false).dispatch();
-        pending_intro_warp_mapid = -1;
-        pending_intro_warp_delay_ms = 0;
     }
 }
