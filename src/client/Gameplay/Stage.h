@@ -137,6 +137,8 @@ namespace jrc
         MapDrops drops;
         MapEffect effect;
 
+        int64_t intro_warp_start_time;  // Track when intro warp was scheduled
+
         Combat combat;
         int32_t pending_intro_warp_mapid;
         int32_t pending_intro_warp_delay_ms;

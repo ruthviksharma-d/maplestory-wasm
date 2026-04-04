@@ -76,6 +76,8 @@ namespace jrc
         effect = MapEffect();
         pending_intro_warp_mapid = -1;
         pending_intro_warp_delay_ms = 0;
+        intro_warp_start_time = 0;
+
 
         chars.clear();
         npcs.clear();
@@ -160,14 +162,15 @@ namespace jrc
         chars.update(physics);
         drops.update(physics);
         player.update(physics);
+        update_intro_warp();
         if (is_intro_input_locked())
         {
             // Direction3-style intro scenes present the actor facing left and
             // should not react to local movement intent while the scene runs.
             player.set_direction(false);
         }
-        update_intro_warp();
         handle_held_actions();
+
         update_directional_context();
 
         portals.update(player.get_position());
@@ -500,4 +503,25 @@ namespace jrc
     {
         effect = MapEffect(path);
     }
+
+    void Stage::schedule_intro_warp(int32_t mapid, int32_t delay_ms)
+    {
+        pending_intro_warp_mapid = mapid;
+        pending_intro_warp_delay_ms = delay_ms;
+        intro_warp_start_time = Timer::get().last_time();
+    }
+
+    void Stage::update_intro_warp()
+    {
+        if (pending_intro_warp_mapid > 0 && pending_intro_warp_delay_ms > 0) {
+            int64_t elapsed = Timer::get().stop() - intro_warp_start_time;
+            if (elapsed >= pending_intro_warp_delay_ms) {
+                ChangeMapPacket(false, -1, "", false).dispatch();
+                pending_intro_warp_mapid = -1;
+                pending_intro_warp_delay_ms = 0;
+                intro_warp_start_time = 0;
+            }
+        }
+    }
 }
+
