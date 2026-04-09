@@ -26,7 +26,7 @@
 #include "../Util/Misc.h"
 
 #include "nlnx/nx.hpp"
-
+#include "../Util/Timer.h"
 #include <algorithm>
 #include <chrono>
 
